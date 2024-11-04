@@ -3,7 +3,7 @@ import java.util.Date;
 import java.util.List;
 
 public class Player extends User {
-    private List<Transaction> transactionHistory; // List to store transactions
+    public List<Transaction> transactionHistory; // List to store transactions
 
     public Player(String name) {
         super(name);
@@ -37,7 +37,7 @@ public class Player extends User {
         System.out.println("INR = " + portfolio[0]);
         System.out.println("USD = " + portfolio[1]);
         System.out.println("EUR = " + portfolio[2]);
-        System.out.println("YEN = " + portfolio[3]);
+        System.out.println("JPY = " + portfolio[3]);
     }
 
     // Overloaded method to display portfolio with a specific date
@@ -46,7 +46,7 @@ public class Player extends User {
         System.out.println("INR = " + portfolio[0]);
         System.out.println("USD = " + portfolio[1]);
         System.out.println("EUR = " + portfolio[2]);
-        System.out.println("YEN = " + portfolio[3]);
+        System.out.println("JPY = " + portfolio[3]);
     }
 
     // Add transactions

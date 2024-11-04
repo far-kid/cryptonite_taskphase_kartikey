@@ -185,85 +185,77 @@ public class Main extends Application {
 
     // Method to show Buy Currency Dialog
     private void showBuyCurrencyDialog() {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Buy/Exchange Currency");
+        // Main class
+    Dialog<Void> dialog = new Dialog<>();
+    dialog.setTitle("Buy/Exchange Currency");
 
-        // Set the button types
-        ButtonType buyButtonType = new ButtonType("Buy", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(buyButtonType, ButtonType.CANCEL);
+    ButtonType buyButtonType = new ButtonType("Buy", ButtonBar.ButtonData.OK_DONE);
+    dialog.getDialogPane().getButtonTypes().addAll(buyButtonType, ButtonType.CANCEL);
 
-        // Create the grid layout
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
+    GridPane grid = new GridPane();
+    grid.setHgap(10);
+    grid.setVgap(10);
+    grid.setPadding(new Insets(20, 150, 10, 10));
 
-        // Currency selection
-        ComboBox<String> sellCurrencyBox = new ComboBox<>();
-        sellCurrencyBox.getItems().addAll(currency);
-        sellCurrencyBox.setValue(currency[0]);
+    ComboBox<String> sellCurrencyBox = new ComboBox<>();
+    sellCurrencyBox.getItems().addAll(currency);
+    sellCurrencyBox.setValue(currency[0]);
 
-        ComboBox<String> buyCurrencyBox = new ComboBox<>();
-        buyCurrencyBox.getItems().addAll(currency);
-        buyCurrencyBox.setValue(currency[1]);
+    ComboBox<String> buyCurrencyBox = new ComboBox<>();
+    buyCurrencyBox.getItems().addAll(currency);
+    buyCurrencyBox.setValue(currency[1]);
 
-        // Amount input
-        TextField amountField = new TextField();
-        amountField.setPromptText("Amount");
+    TextField amountField = new TextField();
+    amountField.setPromptText("Amount");
 
-        // Add to grid
-        grid.add(new Label("Sell Currency:"), 0, 0);
-        grid.add(sellCurrencyBox, 1, 0);
-        grid.add(new Label("Buy Currency:"), 0, 1);
-        grid.add(buyCurrencyBox, 1, 1);
-        grid.add(new Label("Amount:"), 0, 2);
-        grid.add(amountField, 1, 2);
+    grid.add(new Label("Sell Currency:"), 0, 0);
+    grid.add(sellCurrencyBox, 1, 0);
+    grid.add(new Label("Buy Currency:"), 0, 1);
+    grid.add(buyCurrencyBox, 1, 1);
+    grid.add(new Label("Amount:"), 0, 2);
+    grid.add(amountField, 1, 2);
 
-        dialog.getDialogPane().setContent(grid);
+    dialog.getDialogPane().setContent(grid);
 
-        // Convert the result to amount when the buy button is clicked
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == buyButtonType) {
-                String sellCurrency = sellCurrencyBox.getValue();
-                String buyCurrency = buyCurrencyBox.getValue();
-                double amount;
-                try {
-                    amount = Double.parseDouble(amountField.getText());
-                } catch (NumberFormatException e) {
-                    showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number for amount.");
+    dialog.setResultConverter(dialogButton -> {
+        if (dialogButton == buyButtonType) {
+            String sellCurrency = sellCurrencyBox.getValue();
+            String buyCurrency = buyCurrencyBox.getValue();
+            double amount;
+            try {
+                amount = Double.parseDouble(amountField.getText());
+            } catch (NumberFormatException e) {
+                showAlert(Alert.AlertType.ERROR, "Input Error", "Please enter a valid number for amount.");
+                return null;
+            }
+
+            int sellIndex = getCurrencyIndex(sellCurrency);
+            int buyIndex = getCurrencyIndex(buyCurrency);
+
+            Task<Void> buyTask = new Task<Void>() {
+                @Override
+                protected Void call() {
+                    broker.buyCurrency(currentBiweek, sellIndex, amount, buyIndex);
                     return null;
                 }
+            };
 
-                int sellIndex = getCurrencyIndex(sellCurrency);
-                int buyIndex = getCurrencyIndex(buyCurrency);
+            buyTask.setOnSucceeded(event -> {
+                updatePortfolioDisplay();
+                updateTransactionDisplay();
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Currency exchanged successfully.");
+            });
 
-                // Perform buy operation in a separate thread
-                Task<Void> buyTask = new Task<Void>() {
-                    @Override
-                    protected Void call() throws Exception {
-                        broker.buyCurrency(currentBiweek, sellIndex, amount, buyIndex);
-                        return null;
-                    }
-                };
+            buyTask.setOnFailed(event -> showAlert(Alert.AlertType.ERROR, "Error", "Failed to exchange currency."));
 
-                buyTask.setOnSucceeded(event -> {
-                    updatePortfolioDisplay();
-                    updateTransactionDisplay();
-                    showAlert(Alert.AlertType.INFORMATION, "Success", "Currency exchanged successfully.");
-                });
+            Thread buyThread = new Thread(buyTask);
+            buyThread.setDaemon(true);
+            buyThread.start();
+        }
+        return null;
+    });
 
-                buyTask.setOnFailed(event -> {
-                    showAlert(Alert.AlertType.ERROR, "Error", "Failed to exchange currency.");
-                });
-
-                Thread buyThread = new Thread(buyTask);
-                buyThread.setDaemon(true);
-                buyThread.start();
-            }
-            return null;
-        });
-
-        dialog.showAndWait();
+    dialog.showAndWait();
     }
 
     // Helper method to get currency index
